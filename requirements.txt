@@ -1,0 +1,4 @@
+duckdb>=1.1
+streamlit>=1.40
+pydeck>=0.9
+pyarrow>=17.0

@@ -1,0 +1,17 @@
+[project]
+name = "sd-get-it-done"
+version = "0.1.0"
+description = "San Diego Get It Done 311 service request analysis"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "duckdb>=1.1",
+    "polars>=1.0",
+    "httpx>=0.27",
+    "streamlit>=1.40",
+    "pydeck>=0.9",
+    "pyarrow>=17.0",
+]
+
+[project.scripts]
+gid-build = "pipeline.build:main"

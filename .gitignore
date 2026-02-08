@@ -1,0 +1,8 @@
+data/raw/
+data/processed/
+!data/processed/requests.parquet
+db/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
