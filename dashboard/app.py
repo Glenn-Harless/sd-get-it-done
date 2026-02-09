@@ -24,6 +24,8 @@ st.set_page_config(
     layout="wide",
 )
 
+CHART_COLOR = "#83c9ff"
+
 
 def query(sql: str, params: list | None = None):
     """Run SQL against parquet files and return a pandas DataFrame."""
@@ -169,7 +171,7 @@ with tab_overview:
             ORDER BY "Reports" DESC
             LIMIT 10
         """).set_index("Problem Type")
-        st.bar_chart(top10, horizontal=True)
+        st.bar_chart(top10, horizontal=True, color=CHART_COLOR)
 
     with chart_right:
         st.subheader("Reports by Year")
@@ -186,7 +188,7 @@ with tab_overview:
             yearly = yearly[yearly["request_year"] < max_year]
         yearly = yearly.rename(columns={"request_year": "Year"})
         yearly["Year"] = yearly["Year"].astype(str)
-        st.bar_chart(yearly.set_index("Year"))
+        st.bar_chart(yearly.set_index("Year"), color=CHART_COLOR)
 
     # ── Charts row 2: Submission channel + Top neighborhoods ──
     chart_left2, chart_right2 = st.columns(2)
@@ -200,7 +202,7 @@ with tab_overview:
             GROUP BY case_origin
             ORDER BY "Reports" DESC
         """).set_index("Channel")
-        st.bar_chart(origin, horizontal=True)
+        st.bar_chart(origin, horizontal=True, color=CHART_COLOR)
 
     with chart_right2:
         st.subheader("Top 10 Neighborhoods")
@@ -212,7 +214,7 @@ with tab_overview:
             ORDER BY "Reports" DESC
             LIMIT 10
         """).set_index("Neighborhood")
-        st.bar_chart(top_hoods, horizontal=True)
+        st.bar_chart(top_hoods, horizontal=True, color=CHART_COLOR)
 
     # ── Detail table (collapsed by default) ──
     with st.expander("Full Problem Type Breakdown"):
@@ -302,7 +304,7 @@ with tab_response:
         ORDER BY median_resolution_days DESC
         LIMIT 30
     """).set_index("comm_plan_name")
-    st.bar_chart(resp_hood, horizontal=True)
+    st.bar_chart(resp_hood, horizontal=True, color=CHART_COLOR)
 
     st.subheader("Resolution Time by Problem Type")
     resp_type = query(f"""
@@ -313,7 +315,7 @@ with tab_response:
         ORDER BY median_resolution_days DESC
         LIMIT 20
     """).set_index("service_name")
-    st.bar_chart(resp_type, horizontal=True)
+    st.bar_chart(resp_type, horizontal=True, color=CHART_COLOR)
 
 # ── TAB 4: Trends ──
 with tab_trends:
@@ -334,14 +336,14 @@ with tab_trends:
         "request_month_start": "Month",
         "total_requests": "Reports",
     })[["Month", "Reports"]].set_index("Month")
-    st.line_chart(trend_pd)
+    st.line_chart(trend_pd, color=CHART_COLOR)
 
     st.subheader("Median Resolution Time Trend")
     res_trend = monthly.rename(columns={
         "request_month_start": "Month",
         "median_resolution_days": "Median Days",
     })[["Month", "Median Days"]].set_index("Month")
-    st.line_chart(res_trend)
+    st.line_chart(res_trend, color=CHART_COLOR)
 
     # Day/hour heatmap
     st.subheader("When Do People Report Problems?")
