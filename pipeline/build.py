@@ -7,6 +7,7 @@ import time
 
 from pipeline.ingest import ingest
 from pipeline.transform import transform
+from pipeline.validate import validate
 
 
 def main() -> None:
@@ -23,6 +24,9 @@ def main() -> None:
 
     print("── Step 2: Transform ──")
     transform()
+
+    print("\n── Step 3: Validate ──")
+    validate()
 
     elapsed = time.time() - t0
     print(f"\nPipeline complete in {elapsed:.1f}s")

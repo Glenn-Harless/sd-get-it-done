@@ -75,56 +75,67 @@ def transform(*, db_path: Path | None = None) -> None:
     con.execute("DROP TABLE IF EXISTS requests")
     con.execute("""
         CREATE TABLE requests AS
-        SELECT
-            service_request_id,
-            service_request_parent_id,
-            sap_notification_number,
+        SELECT * EXCLUDE (_rn) FROM (
+            SELECT
+                service_request_id,
+                service_request_parent_id,
+                sap_notification_number,
 
-            -- Parse dates
-            TRY_CAST(date_requested AS TIMESTAMP) AS date_requested,
-            TRY_CAST(date_closed AS TIMESTAMP)    AS date_closed,
+                -- Parse dates
+                TRY_CAST(date_requested AS TIMESTAMP) AS date_requested,
+                TRY_CAST(date_closed AS TIMESTAMP)    AS date_closed,
 
-            TRY_CAST(case_age_days AS INTEGER)     AS case_age_days,
-            case_record_type,
-            service_name,
-            service_name_detail,
-            status,
+                TRY_CAST(case_age_days AS INTEGER)     AS case_age_days,
+                case_record_type,
+                service_name,
+                service_name_detail,
+                status,
 
-            -- Location
-            TRY_CAST(lat AS DOUBLE) AS lat,
-            TRY_CAST(lng AS DOUBLE) AS lng,
-            street_address,
-            zipcode,
-            TRY_CAST(council_district AS INTEGER) AS council_district,
-            TRY_CAST(comm_plan_code AS INTEGER)   AS comm_plan_code,
-            comm_plan_name,
-            park_name,
+                -- Location
+                TRY_CAST(lat AS DOUBLE) AS lat,
+                TRY_CAST(lng AS DOUBLE) AS lng,
+                street_address,
+                zipcode,
+                TRY_CAST(council_district AS INTEGER) AS council_district,
+                TRY_CAST(comm_plan_code AS INTEGER)   AS comm_plan_code,
+                comm_plan_name,
+                park_name,
 
-            case_origin,
-            referred,
+                case_origin,
+                referred,
 
-            -- Derived fields
-            CASE
-                WHEN TRY_CAST(date_closed AS TIMESTAMP) IS NOT NULL
-                     AND TRY_CAST(date_requested AS TIMESTAMP) IS NOT NULL
-                THEN DATE_DIFF(
-                    'day',
-                    TRY_CAST(date_requested AS TIMESTAMP),
-                    TRY_CAST(date_closed AS TIMESTAMP)
-                )
-            END AS resolution_days,
+                -- Derived: resolution_days (NULL out negatives — bad upstream data)
+                CASE
+                    WHEN TRY_CAST(date_closed AS TIMESTAMP) IS NOT NULL
+                         AND TRY_CAST(date_requested AS TIMESTAMP) IS NOT NULL
+                         AND TRY_CAST(date_closed AS TIMESTAMP)
+                             >= TRY_CAST(date_requested AS TIMESTAMP)
+                    THEN DATE_DIFF(
+                        'day',
+                        TRY_CAST(date_requested AS TIMESTAMP),
+                        TRY_CAST(date_closed AS TIMESTAMP)
+                    )
+                END AS resolution_days,
 
-            YEAR(TRY_CAST(date_requested AS TIMESTAMP))    AS request_year,
-            MONTH(TRY_CAST(date_requested AS TIMESTAMP))   AS request_month,
-            QUARTER(TRY_CAST(date_requested AS TIMESTAMP)) AS request_quarter,
-            DAYOFWEEK(TRY_CAST(date_requested AS TIMESTAMP)) AS request_dow,
-            DATE_TRUNC('month', TRY_CAST(date_requested AS TIMESTAMP)) AS request_month_start,
+                YEAR(TRY_CAST(date_requested AS TIMESTAMP))    AS request_year,
+                MONTH(TRY_CAST(date_requested AS TIMESTAMP))   AS request_month,
+                QUARTER(TRY_CAST(date_requested AS TIMESTAMP)) AS request_quarter,
+                DAYOFWEEK(TRY_CAST(date_requested AS TIMESTAMP)) AS request_dow,
+                DATE_TRUNC('month', TRY_CAST(date_requested AS TIMESTAMP)) AS request_month_start,
 
-            -- Source file tracking
-            filename AS source_file
+                -- Source file tracking
+                filename AS source_file,
 
-        FROM raw_requests
-        WHERE TRY_CAST(date_requested AS TIMESTAMP) IS NOT NULL
+                -- Dedup: keep latest closure per service_request_id
+                ROW_NUMBER() OVER (
+                    PARTITION BY service_request_id
+                    ORDER BY TRY_CAST(date_closed AS TIMESTAMP) DESC NULLS LAST
+                ) AS _rn
+
+            FROM raw_requests
+            WHERE TRY_CAST(date_requested AS TIMESTAMP) IS NOT NULL
+        )
+        WHERE _rn = 1
     """)
 
     clean_count = con.execute("SELECT count(*) FROM requests").fetchone()[0]
@@ -132,7 +143,10 @@ def transform(*, db_path: Path | None = None) -> None:
 
     # ── Export cleaned data as Parquet ──
     processed_path = PROCESSED_DIR / "requests.parquet"
-    con.execute(f"COPY requests TO '{processed_path}' (FORMAT PARQUET, COMPRESSION ZSTD)")
+    con.execute(f"""
+        COPY (SELECT * FROM requests ORDER BY date_requested)
+        TO '{processed_path}' (FORMAT PARQUET, COMPRESSION ZSTD)
+    """)
     print(f"  Exported processed data -> {processed_path}")
 
     # ── Pre-compute aggregations ──
