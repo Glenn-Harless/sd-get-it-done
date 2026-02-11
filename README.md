@@ -3,6 +3,8 @@
 ## Overview
 Analyze every non-emergency problem report submitted by San Diego residents since May 2016 via the Get It Done app/web portal. Explore response times, geographic patterns, equity gaps, and seasonal trends across problem types like potholes, graffiti, illegal dumping, and streetlight outages.
 
+**Live Dashboard**: https://sd-get-it-done.streamlit.app/
+
 ## Key Questions
 - Which neighborhoods wait longest for issue resolution?
 - Do wealthier zip codes get faster service?
