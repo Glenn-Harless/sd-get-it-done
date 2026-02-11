@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "sd-get-it-done": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "api.mcp_server"]
+    }
+  }
+}

@@ -11,7 +11,12 @@ dependencies = [
     "streamlit>=1.40",
     "pydeck>=0.9",
     "pyarrow>=17.0",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "fastmcp>=2.12",
+    "pandas>=2.0",
 ]
 
 [project.scripts]
 gid-build = "pipeline.build:main"
+gid-mcp = "api.mcp_server:main"
