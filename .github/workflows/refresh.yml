@@ -1,9 +1,9 @@
-name: Refresh 311 Data
+name: Monthly Data Refresh
 
 on:
   schedule:
-    - cron: "30 8 1 * *"  # Monthly 1st at 8:30 UTC (12:30 AM PST)
-  workflow_dispatch: {}
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
 
 jobs:
   refresh:
@@ -17,19 +17,16 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Set up Python
-        run: uv python install 3.12
-
       - name: Install dependencies
         run: uv sync
 
       - name: Run pipeline
-        run: uv run python -m pipeline.build --force
+        run: uv run python -m pipeline.build
 
-      - name: Commit aggregated data
+      - name: Commit updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/processed/requests.parquet data/aggregated/
-          git diff --cached --quiet || git commit -m "chore: refresh aggregated data $(date -u +%Y-%m-%d)"
+          git add data/processed/ data/aggregated/
+          git diff --staged --quiet || git commit -m "chore: monthly data refresh [skip ci]"
           git push

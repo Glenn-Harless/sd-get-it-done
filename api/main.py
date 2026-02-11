@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 from . import queries as q
 from .models import (
@@ -29,6 +30,7 @@ app = FastAPI(
     ),
     version="0.1.0",
 )
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 _AGG = Path(__file__).resolve().parent.parent / "data" / "aggregated"
 

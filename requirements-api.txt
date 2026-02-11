@@ -4,3 +4,4 @@ duckdb>=1.1
 pyarrow>=17.0
 pandas>=2.0
 numpy>=1.26
+fastmcp>=2.0
